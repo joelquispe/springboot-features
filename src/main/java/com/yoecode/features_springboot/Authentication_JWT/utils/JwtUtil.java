@@ -3,6 +3,10 @@ package com.yoecode.features_springboot.authentication_jwt.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -11,10 +15,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import javax.crypto.SecretKey;
+
 @Component
 public class JwtUtil {
-    private String secret = "c3c13e56a7ca08fdd33703433262010056e8fa6b8163020b497b35326dd9c2ab"; // Replace with a secure secret key
-    private long expirationTime = 900_000; // 15 minutes
+    @Value("${spring.security.authentication.jwt.validity}")
+    private long tokenValidityInMilliSeconds;
+
+    @Value("${spring.security.authentication.jwt.secret}")
+    private String secretKey;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -34,7 +43,7 @@ public class JwtUtil {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser().setSigningKey(secret).build().parseSignedClaims(token).getBody();
+        return Jwts.parser().setSigningKey(secretKey).build().parseSignedClaims(token).getBody();
     }
 
     public String generateToken(String username) {
@@ -42,13 +51,18 @@ public class JwtUtil {
         return createToken(claims, username);
     }
 
+    private SecretKey getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(SignatureAlgorithm.HS256, secret)
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + tokenValidityInMilliSeconds))
+                .signWith(getSignInKey(), Jwts.SIG.HS256)
                 .compact();
     }
 

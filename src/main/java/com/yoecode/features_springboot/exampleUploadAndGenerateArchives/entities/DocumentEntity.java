@@ -25,6 +25,6 @@ public class DocumentEntity {
     private String format;
 
     @Lob  // Se utiliza @Lob para indicar que es un tipo de dato grande (BLOB)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "MEDIUMBLOB")
     private byte[] content;
 }

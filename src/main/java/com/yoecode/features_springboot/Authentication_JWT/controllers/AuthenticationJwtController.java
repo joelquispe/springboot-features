@@ -1,7 +1,7 @@
 package com.yoecode.features_springboot.authentication_jwt.controllers;
 
 import com.yoecode.features_springboot.authentication_jwt.dtos.SignInReqDto;
-import com.yoecode.features_springboot.authentication_jwt.models.AuthReq;
+import com.yoecode.features_springboot.authentication_jwt.models.Auth;
 import com.yoecode.features_springboot.authentication_jwt.services.CustomUserJwtService;
 import com.yoecode.features_springboot.authentication_jwt.utils.JwtUtil;
 import org.springframework.http.HttpStatus;
@@ -32,7 +32,7 @@ public class AuthenticationJwtController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<String> registerUser(@RequestBody AuthReq user) {
+    public ResponseEntity<String> registerUser(@RequestBody Auth user) {
         userService.saveUser(user);
         return ResponseEntity.ok("User registered successfully!");
     }
