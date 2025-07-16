@@ -47,8 +47,8 @@ public class SecurityConfigJwt {
         
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth-jwt/sign-in", "/auth-jwt/sign-up").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/auth-jwt/sign-in", "/auth-jwt/sign-up","/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

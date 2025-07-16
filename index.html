@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPal Payment Gateway - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0070ba, #003087);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0070ba;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #0070ba, #003087);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,112,186,0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0070ba;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .order-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #0070ba;
+        }
+
+        .order-details h3 {
+            margin-bottom: 10px;
+            color: #0070ba;
+        }
+
+        .order-details p {
+            margin-bottom: 5px;
+        }
+
+        .paypal-button {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .currency-symbol {
+            position: relative;
+        }
+
+        .currency-symbol::before {
+            content: '$';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .currency-symbol input {
+            padding-left: 30px;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .test-btn {
+            flex: 1;
+            padding: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .test-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 PayPal Payment</h1>
+            <p>Integración con Spring Boot API</p>
+        </div>
+
+        <div class="form-container">
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="amount">Monto *</label>
+                    <div class="currency-symbol">
+                        <input type="number" id="amount" name="amount" step="0.01" min="0.01" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="currency">Moneda *</label>
+                    <select id="currency" name="currency" required>
+                        <option value="USD">USD - Dólar Estadounidense</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - Libra Esterlina</option>
+                        <option value="CAD">CAD - Dólar Canadiense</option>
+                        <option value="AUD">AUD - Dólar Australiano</option>
+                        <option value="MXN">MXN - Peso Mexicano</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Descripción</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Descripción del producto o servicio"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="returnUrl">URL de Retorno Exitoso</label>
+                    <input type="url" id="returnUrl" name="returnUrl" placeholder="https://example.com/success">
+                </div>
+
+                <div class="form-group">
+                    <label for="cancelUrl">URL de Cancelación</label>
+                    <input type="url" id="cancelUrl" name="cancelUrl" placeholder="https://example.com/cancel">
+                </div>
+
+                <button type="submit" class="btn" id="createOrderBtn">
+                    Crear Orden de Pago
+                </button>
+
+                <!-- Botones de prueba -->
+                <div class="test-buttons">
+                    <button type="button" class="test-btn" onclick="fillTestData()">
+                        📝 Datos de Prueba
+                    </button>
+                    <button type="button" class="test-btn" onclick="clearForm()">
+                        🗑️ Limpiar
+                    </button>
+                </div>
+            </form>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Procesando orden...</p>
+            </div>
+
+            <!-- Resultado -->
+            <div class="result" id="result"></div>
+
+            <!-- Detalles de la orden -->
+            <div class="order-details" id="orderDetails" style="display: none;">
+                <h3>📋 Detalles de la Orden</h3>
+                <p><strong>ID:</strong> <span id="orderId"></span></p>
+                <p><strong>Estado:</strong> <span id="orderStatus"></span></p>
+                <p><strong>Monto:</strong> <span id="orderAmount"></span></p>
+                <p><strong>Moneda:</strong> <span id="orderCurrency"></span></p>
+                
+                <div class="paypal-button" id="paypalButton">
+                    <button class="btn" onclick="redirectToPayPal()">
+                        🚀 Pagar con PayPal
+                    </button>
+                </div>
+
+                <div class="test-buttons">
+                    <button type="button" class="test-btn" onclick="getOrderDetails()">
+                        🔍 Ver Detalles
+                    </button>
+                    <button type="button" class="test-btn" onclick="simulateReturn()">
+                        ✅ Simular Retorno
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la API
+        const API_BASE_URL = 'http://localhost:8080/api/v1/paypal';
+        
+        // Variables globales
+        let currentOrder = null;
+        let approvalUrl = null;
+
+        // Elementos del DOM
+        const form = document.getElementById('paymentForm');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const orderDetails = document.getElementById('orderDetails');
+        const createOrderBtn = document.getElementById('createOrderBtn');
+
+        // Event listeners
+        form.addEventListener('submit', handleCreateOrder);
+
+        // Función para crear orden
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            
+            showLoading(true);
+            hideResult();
+            hideOrderDetails();
+
+            try {
+                const formData = new FormData(form);
+                const orderData = {
+                    amount: parseFloat(formData.get('amount')),
+                    currency: formData.get('currency'),
+                    description: formData.get('description') || `Pago de ${formData.get('amount')} ${formData.get('currency')}`,
+                    returnUrl: formData.get('returnUrl') || `${window.location.origin}/success`,
+                    cancelUrl: formData.get('cancelUrl') || `${window.location.origin}/cancel`
+                };
+
+                console.log('Creando orden:', orderData);
+
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentOrder = data;
+                    approvalUrl = data.approvalUrl;
+                    
+                    showResult('success', `✅ Orden creada exitosamente! ID: ${data.orderId}`);
+                    showOrderDetails(data, orderData);
+                } else {
+                    showResult('error', `❌ Error al crear orden: ${data.message || 'Error desconocido'}`);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('error', `❌ Error de conexión: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Función para capturar orden
+        async function captureOrder(orderId) {
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${API_BASE_URL}/orders/${orderId}/capture`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('success', `✅ Pago capturado exitosamente! Estado: ${data.status}`);
+                    return data;
+                } else {
+                    showResult('error', `❌ Error al capturar pago: ${data.message || 'Error desconocido'}`);
+                    return null;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('error', `❌ Error de conexión: ${error.message}`);
+                return null;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Función para obtener detalles de orden
+        async function getOrderDetails() {
+            if (!currentOrder) {
+                showResult('error', '❌ No hay orden activa');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${API_BASE_URL}/orders/${currentOrder.orderId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('success', `✅ Detalles obtenidos: Estado actual: ${data.status}`);
+                    console.log('Detalles completos:', data);
+                    
+                    // Actualizar estado en la UI
+                    document.getElementById('orderStatus').textContent = data.status;
+                } else {
+                    showResult('error', `❌ Error al obtener detalles: ${data.message || 'Error desconocido'}`);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('error', `❌ Error de conexión: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Función para redirigir a PayPal
+        function redirectToPayPal() {
+            if (approvalUrl) {
+                // En producción, esto abriría PayPal en una nueva ventana o redirigiría
+                window.open(approvalUrl, '_blank');
+                showResult('success', '🌐 Redirigiendo a PayPal... Completa el pago y regresa.');
+            } else {
+                showResult('error', '❌ No hay URL de aprobación disponible');
+            }
+        }
+
+        // Simular retorno exitoso de PayPal
+        async function simulateReturn() {
+            if (!currentOrder) {
+                showResult('error', '❌ No hay orden activa');
+                return;
+            }
+
+            // Simular parámetros que PayPal enviaría
+            const payerID = 'SIMULATED_PAYER_ID';
+            const token = currentOrder.orderId;
+            
+            showResult('success', `🔄 Simulando retorno de PayPal... PayerID: ${payerID}`);
+            
+            // Esperar un poco para simular el proceso
+            setTimeout(async () => {
+                await captureOrder(currentOrder.orderId);
+            }, 1000);
+        }
+
+        // Funciones auxiliares
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+            createOrderBtn.disabled = show;
+        }
+
+        function showResult(type, message) {
+            result.className = `result ${type}`;
+            result.textContent = message;
+            result.style.display = 'block';
+        }
+
+        function hideResult() {
+            result.style.display = 'none';
+        }
+
+        function showOrderDetails(orderData, requestData) {
+            document.getElementById('orderId').textContent = orderData.orderId;
+            document.getElementById('orderStatus').textContent = orderData.status;
+            document.getElementById('orderAmount').textContent = requestData.amount;
+            document.getElementById('orderCurrency').textContent = requestData.currency;
+            
+            orderDetails.style.display = 'block';
+            document.getElementById('paypalButton').style.display = 'block';
+        }
+
+        function hideOrderDetails() {
+            orderDetails.style.display = 'none';
+        }
+
+        function fillTestData() {
+            document.getElementById('amount').value = '99.99';
+            document.getElementById('currency').value = 'USD';
+            document.getElementById('description').value = 'Producto de prueba - Demo PayPal';
+            document.getElementById('returnUrl').value = 'https://example.com/success';
+            document.getElementById('cancelUrl').value = 'https://example.com/cancel';
+        }
+
+        function clearForm() {
+            form.reset();
+            hideResult();
+            hideOrderDetails();
+            currentOrder = null;
+            approvalUrl = null;
+        }
+
+        // Manejar parámetros de URL (para cuando PayPal redirige de vuelta)
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const payerID = urlParams.get('PayerID');
+
+            if (token && payerID) {
+                showResult('success', `🎉 Retorno de PayPal detectado! Token: ${token}, PayerID: ${payerID}`);
+                
+                // Aquí normalmente capturarías automáticamente la orden
+                setTimeout(() => {
+                    if (confirm('¿Deseas capturar automáticamente esta orden?')) {
+                        captureOrder(token);
+                    }
+                }, 1000);
+            }
+        });
+
+        // Detectar errores de CORS
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && event.reason.message && event.reason.message.includes('CORS')) {
+                showResult('error', '❌ Error de CORS: Asegúrate de que el servidor Spring Boot esté ejecutándose en localhost:8080');
+            }
+        });
+    </script>
+</body>
+</html>
